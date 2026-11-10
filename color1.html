@@ -3,340 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>光與顏色模擬實驗(Light and color simulation experiment)</title>
+    <title>光與顏色模擬實驗 (Light and color simulation experiment)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 工業風：深色背景，高對比文字，去除圓角 */
-        body { font-family: 'Inter', sans-serif; min-height: 10vh; background-color: #1a1a1a; }
+        /* 工業硬派風格：深黑背景、高對比度、銳利無大圓角邊框 */
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            min-height: 100vh; 
+            background-color: #161616; 
+        }
         
-        /* 自定義滑桿樣式，使其更具機械感 */
+        /* 機械感自定義滑桿樣式 */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 18px;
             width: 18px;
-            border-radius: 4px; /* 變為方形 */
+            border-radius: 3px;
             cursor: pointer;
-            margin-top: -7px;
+            margin-top: -6px;
             border: 1px solid #EAEAEA;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
         }
-        /* 針對不同顏色的滑桿設定拇指顏色 */
-        #lightR::-webkit-slider-thumb { background: #FF3333; box-shadow: 0 0 5px rgba(255, 0, 0, 0.5); }
-        #lightG::-webkit-slider-thumb { background: #33CC33; box-shadow: 0 0 5px rgba(0, 255, 0, 0.5); }
-        #lightB::-webkit-slider-thumb { background: #3366FF; box-shadow: 0 0 5px rgba(0, 0, 255, 0.5); }
-        /* 滑軌顏色使用深色背景上的高亮漸變 */
-        .slider-track-red { background: linear-gradient(to right, #444444, #FF3333); height: 5px; border-radius: 0; }
-        .slider-track-green { background: linear-gradient(to right, #444444, #33CC33); height: 5px; border-radius: 0; }
-        .slider-track-blue { background: linear-gradient(to right, #444444, #3366FF); height: 5px; border-radius: 0; }
+        #lightR::-webkit-slider-thumb { background: #FF3333; }
+        #lightG::-webkit-slider-thumb { background: #33CC33; }
+        #lightB::-webkit-slider-thumb { background: #3366FF; }
+        
+        .slider-track-red { background: linear-gradient(to right, #383838, #FF3333); height: 6px; }
+        .slider-track-green { background: linear-gradient(to right, #383838, #33CC33); height: 6px; }
+        .slider-track-blue { background: linear-gradient(to right, #383838, #3366FF); height: 6px; }
+
+        /* 去除數字輸入框箭頭提升工整度 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
-<body class="p-4 sm:p-8 flex items-start justify-center">
+<body class="p-3 sm:p-5 lg:p-7 flex items-start justify-center">
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        // 工業風格配色
-                        'industrial-bg': '#1a1a1a',     // 深黑色背景
-                        'panel-bg': '#2c2c2c',          // 控制面板深灰色
-                        'text-light': '#EAEAEA',        // 亮白色文字
-                        'border-accent': '#606060',     // 金屬色邊框
-                        'warning-accent': '#FFD700',    // 黃色強調色
+                        'industrial-bg': '#161616',
+                        'panel-bg': '#262626',
+                        'card-bg': '#1f1f1f',
+                        'text-light': '#F3F4F6',
+                        'border-accent': '#525252',
+                        'warning-accent': '#FACC15',
                     }
                 }
             }
         }
     </script>
 
-    <!-- 主容器：採用深灰背景，邊緣銳利，強烈邊框。w-full 和 max-w-5xl 確保響應式。 -->
-    <div class="w-full max-w-5xl bg-gray-800 border-2 border-border-accent shadow-2xl rounded-sm p-8 sm:p-10">
-        <!-- 網頁標題變更 -->
-        <h1 class="text-3xl font-bold text-text-light mb-2 text-center border-b-2 border-border-accent pb-2">
-            光與顏色模擬實驗(Light and color simulation experiment)
-        </h1>
+    <!-- 主容器 -->
+    <div class="w-full max-w-[1440px] bg-gray-900/90 border-2 border-border-accent shadow-2xl rounded-sm p-4 sm:p-6 lg:p-8">
+        <!-- 主標題列 -->
+        <header class="mb-6 border-b-2 border-border-accent pb-3 text-center">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-text-light tracking-wide">
+                光與顏色模擬實驗 <span class="text-xs sm:text-base font-normal text-gray-400 block sm:inline mt-1 sm:mt-0">(Light and Color Simulation Experiment)</span>
+            </h1>
+        </header>
 
-        <!-- 結構化網格：在小螢幕上堆疊 (grid-cols-1)，在大螢幕上並排 (lg:grid-cols-2)。確保響應式。 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <!-- 三個獨立看板 -->
+        <main class="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch">
 
-            <!-- 左側：輸入控制面板 -->
-            <div class="bg-panel-bg p-6 rounded-sm border border-border-accent">
-                <!-- 實驗 1 標題變更 -->
-                <h2 class="text-xl font-semibold mb-6 text-warning-accent border-b border-border-accent pb-2">
-                    1. 色光混合模擬 (Color light mixing simulation)
-                </h2>
-                
-                <!-- 紅光控制 -->
-                <div class="mb-4">
-                    <!-- 紅光強度標籤變更 -->
-                    <label for="lightR" class="block text-lg font-mono text-text-light flex justify-between">
-                        <span>紅光強度 (Red light intensity)</span>
-                        <span id="labelR" class="font-bold text-red-400">0</span>
-                    </label>
-                    <input type="range" id="lightR" min="0" max="255" value="0"
-                           class="w-full h-3 rounded-lg appearance-none cursor-pointer slider-track-red">
-                </div>
-
-                <!-- 綠光控制 -->
-                <div class="mb-4">
-                    <!-- 綠光強度標籤變更 -->
-                    <label for="lightG" class="block text-lg font-mono text-text-light flex justify-between">
-                        <span>綠光強度 (Green light intensity)</span>
-                        <span id="labelG" class="font-bold text-green-400">0</span>
-                    </label>
-                    <input type="range" id="lightG" min="0" max="255" value="0"
-                           class="w-full h-3 rounded-lg appearance-none cursor-pointer slider-track-green">
-                </div>
-
-                <!-- 藍光控制 -->
-                <div class="mb-6">
-                    <!-- 藍光強度標籤變更 -->
-                    <label for="lightB" class="block text-lg font-mono text-text-light flex justify-between">
-                        <span>藍光強度 (Blue light intensity)</span>
-                        <span id="labelB" class="font-bold text-blue-400">0</span>
-                    </label>
-                    <input type="range" id="lightB" min="0" max="255" value="0"
-                           class="w-full h-3 rounded-lg appearance-none cursor-pointer slider-track-blue">
-                </div>
-
-                <!-- 混合色光結果 (顯示螢幕) - 圓形 -->
-                <div class="p-4 bg-gray-700 rounded-sm border border-border-accent">
-                    <!-- 混合結果標籤變更 -->
-                    <p class="text-base font-semibold text-text-light mb-2">色光混合結果 (Color light mixing results):</p>
-                    <!-- 設置 h-20 w-20, mx-auto 和 rounded-full 實現居中圓形 -->
-                    <div id="mixedLightColor" class="h-20 w-20 mx-auto rounded-full transition-all duration-300 border border-gray-500"
-                         style="background-color: rgb(0, 0, 0);"></div>
-                    <p id="mixedLightHex" class="text-sm font-mono text-center mt-2 text-gray-700">HEX: #000000</p>
-                </div>
-            </div>
-
-            <!-- 右側：物體與結果輸出面板 -->
-            <div class="bg-panel-bg p-6 rounded-sm border border-border-accent flex flex-col">
-                <!-- 實驗 2 標題變更 -->
-                <h2 class="text-xl font-semibold mb-6 text-warning-accent border-b border-border-accent pb-2">
-                    2. 物體在不同色光照射下的結果 (The results of objects under different colors of light)
-                </h2>
-                
-                <!-- 物體選擇 -->
-                <!-- 選擇標籤變更 -->
-                <p class="text-base font-semibold text-text-light mb-3">選擇物體顏色 (Select object color):</p>
-                <!-- flex-wrap 確保按鈕在手機上換行，flex-grow 確保按鈕在小螢幕上平均分配寬度 -->
-                <div class="flex flex-wrap gap-2 mb-6" id="objectColorButtons">
-                    <!-- Buttons will be injected here by JS -->
-                </div>
-                
-                <!-- 當前物體顏色顯示：物體變更為正三角形 -->
-                <div class="mb-6 p-4 bg-gray-700 rounded-sm border border-border-accent">
-                    <!-- 物體顏色標籤變更 -->
-                    <p class="text-base font-semibold text-text-light mb-2">物體在白光照射下的顏色 (The color of an object under white light):</p>
-                    <div class="flex items-center space-x-4">
-                        <!-- 內在顏色三角形 (較小尺寸) -->
-                        <div id="intrinsicObjectColor" 
-                             class="transition-all duration-300 transform" 
-                             style="
-                                 /* 定義三角形尺寸和形狀 (40x40px 區域) */
-                                 width: 0; 
-                                 height: 0; 
-                                 border-left: 20px solid transparent; 
-                                 border-right: 20px solid transparent;
-                                 border-bottom: 40px solid #000000; /* 預設為黑色 */
-                                 /* 使用負 margin 調整視覺對齊，使三角形尖端與文字基線對齊 */
-                                 margin-bottom: -10px; 
-                             ">
-                        </div>
-                        <p id="intrinsicObjectName" class="text-lg font-mono text-text-light">黑色 (Black)</p>
-                    </div>
-                </div>
-
-                <!-- 物體最終顯色結果 (輸出螢幕) - 黑色背景與三角形 -->
-                <div class="p-6 bg-gray-800 rounded-sm border-2 border-warning-accent shadow-inner mt-auto">
-                    <!-- 實驗 3 標題變更 -->
-                    <h3 class="text-xl font-bold text-warning-accent mb-3 text-center">
-                        3. 觀察者看到的物體顏色 (The color of the object as seen by the observer)
-                    </h3>
+            <!-- 【看板 1】：色光混合模擬 -->
+            <section class="bg-panel-bg p-5 rounded-sm border border-border-accent flex flex-col justify-between shadow-lg">
+                <div>
+                    <h2 class="text-lg font-bold text-warning-accent border-b border-border-accent pb-2 mb-4 flex items-center">
+                        <span class="mr-2 text-xl">💡</span> 1. 色光混合模擬 (Light Mixing)
+                    </h2>
                     
-                    <!-- 黑色背景容器 -->
-                    <div id="apparentObjectDisplayArea" 
-                         class="h-32 w-full flex items-center justify-center bg-black rounded-sm border-4 border-gray-600 shadow-inner">
-                        
-                        <!-- 顯色結果三角形 (較大尺寸) -->
-                        <div id="apparentObjectColor" 
-                             class="transition-all duration-300"
-                             style="
-                                 /* 定義三角形尺寸和形狀 */
-                                 width: 0; 
-                                 height: 0; 
-                                 border-left: 40px solid transparent; /* 左右邊界 */
-                                 border-right: 40px solid transparent;
-                                 border-bottom: 80px solid rgb(0, 0, 0); /* 底部邊框作為顏色 */
-                                 filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5)); /* 增加一點發光效果 */
-                             ">
+                    <!-- 紅色光強度控制 -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="lightR" class="text-sm font-semibold text-red-400 flex items-center">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block mr-2"></span>紅光 (Red)
+                            </label>
+                            <input type="number" id="inputR" min="0" max="255" value="0" 
+                                   class="w-16 p-1 text-center bg-gray-950 border border-red-600 text-red-400 rounded-sm font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-red-400">
+                        </div>
+                        <input type="range" id="lightR" min="0" max="255" value="0"
+                               class="w-full h-3 rounded appearance-none cursor-pointer slider-track-red">
+                    </div>
+
+                    <!-- 綠色光強度控制 -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="lightG" class="text-sm font-semibold text-green-400 flex items-center">
+                                <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block mr-2"></span>綠光 (Green)
+                            </label>
+                            <input type="number" id="inputG" min="0" max="255" value="0" 
+                                   class="w-16 p-1 text-center bg-gray-950 border border-green-600 text-green-400 rounded-sm font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                        </div>
+                        <input type="range" id="lightG" min="0" max="255" value="0"
+                               class="w-full h-3 rounded appearance-none cursor-pointer slider-track-green">
+                    </div>
+
+                    <!-- 藍色光強度控制 -->
+                    <div class="mb-5">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="lightB" class="text-sm font-semibold text-blue-400 flex items-center">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block mr-2"></span>藍光 (Blue)
+                            </label>
+                            <input type="number" id="inputB" min="0" max="255" value="0" 
+                                   class="w-16 p-1 text-center bg-gray-950 border border-blue-600 text-blue-400 rounded-sm font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        </div>
+                        <input type="range" id="lightB" min="0" max="255" value="0"
+                               class="w-full h-3 rounded appearance-none cursor-pointer slider-track-blue">
+                    </div>
+                </div>
+
+                <!-- 混合色光輸出展示 (圓形光斑) -->
+                <div>
+                    <div class="p-3.5 bg-gray-800/90 rounded-sm border border-border-accent flex flex-col items-center">
+                        <p class="text-xs font-semibold text-gray-300 mb-2.5">入射混合色光 (Incident Light Color)：</p>
+                        <div id="mixedLightColor" class="h-16 w-16 rounded-full transition-colors duration-150 border border-gray-500"
+                             style="background-color: rgb(0, 0, 0);"></div>
+                        <p id="mixedLightHex" class="text-xs font-mono font-bold text-center mt-2 text-gray-400">HEX: #000000</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 【看板 2】：物體內在原色 -->
+            <section class="bg-panel-bg p-5 rounded-sm border border-border-accent flex flex-col justify-between shadow-lg">
+                <div>
+                    <h2 class="text-lg font-bold text-warning-accent border-b border-border-accent pb-2 mb-4 flex items-center">
+                        <span class="mr-2 text-xl">⚡</span> 2. 物體原來顏色 (Object Color)
+                    </h2>
+                    
+                    <p class="text-xs font-semibold text-gray-300 mb-2">選擇小汽車本體顏色 (Select Object Color)：</p>
+                    <!-- 顏色選擇按鈕區 -->
+                    <div class="flex flex-wrap gap-1.5 mb-4" id="objectColorButtons"></div>
+
+                    <!-- 小汽車在白光下的本體色展示 -->
+                    <div class="p-3.5 bg-gray-800/90 rounded-sm border border-border-accent">
+                        <p class="text-xs font-semibold text-gray-300 mb-2">白光照射下的顏色 (Under White Light)：</p>
+                        <div class="flex items-center space-x-4 py-1">
+                            <!-- 小汽車向量剪影 (本體色) -->
+                            <div class="w-20 h-16 flex items-center justify-center bg-gray-900/80 rounded border border-gray-700 p-1 flex-shrink-0">
+                                <svg id="intrinsicObjectColor" viewBox="0 0 100 50" class="w-full h-auto transition-colors duration-150" fill="#FF0000">
+                                    <!-- 小汽車輪廓與鏤空窗戶/車輪 -->
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 36C10 36 7 36 5 33C3.5 30.5 4 25 7 24C10 23 18 23 23 23L35 12C38 9 44 8 52 8H70C77 8 83 11 87 16L94 22C97 23 100 25 100 28C100 32 99 35 97 36C95 36 90 36 90 36C89 31.5 85 28 80 28C75 28 71 31.5 70 36H36C35 31.5 31 28 26 28C21 28 17 31.5 16 36H12ZM37 21H51V12H50C44 12 39.5 14.5 37 21ZM55 21H81L76 14C73 12.5 68 12 62 12H55V21ZM26 44C29.3 44 32 41.3 32 38C32 34.7 29.3 32 26 32C22.7 32 20 34.7 20 38C20 41.3 22.7 44 26 44ZM80 44C83.3 44 86 41.3 86 38C86 34.7 83.3 32 80 32C76.7 32 74 34.7 74 38C74 41.3 76.7 44 80 44Z" />
+                                </svg>
+                            </div>
+                            <div class="overflow-hidden">
+                                <p id="intrinsicObjectName" class="text-base font-bold font-mono text-text-light truncate">紅色 (Red)</p>
+                            </div>
                         </div>
                     </div>
-                    <p id="apparentObjectHex" class="text-base font-mono text-center mt-3 text-text-light">HEX: #000000</p>
                 </div>
-            </div>
-        </div>
+            </section>
+
+            <!-- 【看板 3】：觀察者看到的物體顏色（純物理色光反射，無任何發光/光暈效果） -->
+            <section class="bg-panel-bg p-5 rounded-sm border-2 border-warning-accent flex flex-col justify-between shadow-2xl relative">
+                <div>
+                    <h2 class="text-lg font-bold text-warning-accent border-b border-border-accent pb-2 mb-4 flex items-center">
+                        <span class="mr-2 text-xl">👁️</span> 3. 觀察者看到的顏色 (Observed Color)
+                    </h2>
+                    
+                    <p class="text-xs font-semibold text-gray-300 mb-2">暗室觀察艙 (Dark Chamber)：</p>
+
+                    <!-- 暗室觀察艙：純深色觀察環境，去除任何投影光效 -->
+                    <div id="apparentObjectDisplayArea" 
+                         class="h-36 sm:h-40 w-full flex items-center justify-center bg-black rounded-sm border-4 border-gray-700 relative overflow-hidden px-4">
+                        
+                        <!-- 小汽車向量剪影 (純淨色彩填充，無光暈、發光或陰影濾鏡) -->
+                        <svg id="apparentObjectColor" viewBox="0 0 100 50" 
+                             class="w-36 sm:w-44 h-auto transition-colors duration-150"
+                             fill="rgb(0, 0, 0)">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 36C10 36 7 36 5 33C3.5 30.5 4 25 7 24C10 23 18 23 23 23L35 12C38 9 44 8 52 8H70C77 8 83 11 87 16L94 22C97 23 100 25 100 28C100 32 99 35 97 36C95 36 90 36 90 36C89 31.5 85 28 80 28C75 28 71 31.5 70 36H36C35 31.5 31 28 26 28C21 28 17 31.5 16 36H12ZM37 21H51V12H50C44 12 39.5 14.5 37 21ZM55 21H81L76 14C73 12.5 68 12 62 12H55V21ZM26 44C29.3 44 32 41.3 32 38C32 34.7 29.3 32 26 32C22.7 32 20 34.7 20 38C20 41.3 22.7 44 26 44ZM80 44C83.3 44 86 41.3 86 38C86 34.7 83.3 32 80 32C76.7 32 74 34.7 74 38C74 41.3 76.7 44 80 44Z" />
+                        </svg>
+                    </div>
+
+                    <p id="apparentObjectHex" class="text-xs sm:text-sm font-mono font-bold text-center mt-2.5 text-text-light">HEX: #000000</p>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 頁尾署名與版本標記 -->
+        <footer class="mt-8 pt-4 border-t border-border-accent text-right text-xs text-gray-500 font-mono">
+            by Jay's Lab 紅樓老頭子 系統版本：v1.6
+        </footer>
     </div>
 
     <script>
-        // 物體內在顏色及其在 RGB 通道上的反射率 (0-255)
+        // 物體內在顏色及其在 RGB 上的反射率 (0-255)
         const objectColors = {
-            'white': { name: '白色 (White)', r: 255, g: 255, b: 255, hex: '#FFFFFF' },
             'red': { name: '紅色 (Red)', r: 255, g: 0, b: 0, hex: '#FF0000' },
             'green': { name: '綠色 (Green)', r: 0, g: 255, b: 0, hex: '#00FF00' },
             'blue': { name: '藍色 (Blue)', r: 0, g: 0, b: 255, hex: '#0000FF' },
+            'white': { name: '白色 (White)', r: 255, g: 255, b: 255, hex: '#FFFFFF' },
+            'black': { name: '黑色 (Black)', r: 0, g: 0, b: 0, hex: '#000000' },
             'yellow': { name: '黃色 (Yellow)', r: 255, g: 255, b: 0, hex: '#FFFF00' },
             'magenta': { name: '洋紅 (Magenta)', r: 255, g: 0, b: 255, hex: '#FF00FF' },
-            'cyan': { name: '青色 (Cyan)', r: 0, g: 255, b: 255, hex: '#00FFFF' },
-            'black': { name: '黑色 (Black)', r: 0, g: 0, b: 0, hex: '#000000' }
+            'cyan': { name: '青色 (Cyan)', r: 0, g: 255, b: 255, hex: '#00FFFF' }
         };
 
-        // 預設物體為黑色
-        let currentObjectKey = 'black'; 
+        // 預設物體為紅色小汽車
+        let currentObjectKey = 'red'; 
 
         // 取得 UI 元素
         const lightRInput = document.getElementById('lightR');
         const lightGInput = document.getElementById('lightG');
         const lightBInput = document.getElementById('lightB');
-        const labelR = document.getElementById('labelR');
-        const labelG = document.getElementById('labelG');
-        const labelB = document.getElementById('labelB');
+        
+        const inputR = document.getElementById('inputR');
+        const inputG = document.getElementById('inputG');
+        const inputB = document.getElementById('inputB');
+        
         const mixedLightColorDiv = document.getElementById('mixedLightColor');
         const mixedLightHexP = document.getElementById('mixedLightHex');
         
-        // 內在顏色三角形
-        const intrinsicObjectColorDiv = document.getElementById('intrinsicObjectColor'); 
+        // 看板 2：內在顏色小汽車 SVG 與文字
+        const intrinsicObjectColorSvg = document.getElementById('intrinsicObjectColor'); 
         const intrinsicObjectNameP = document.getElementById('intrinsicObjectName');
         
-        // 外觀顏色三角形
-        const apparentObjectColorDiv = document.getElementById('apparentObjectColor');
+        // 看板 3：暗室顯色小汽車 SVG 與文字
+        const apparentObjectColorSvg = document.getElementById('apparentObjectColor');
         const apparentObjectHexP = document.getElementById('apparentObjectHex');
         const objectColorButtonsDiv = document.getElementById('objectColorButtons');
 
         /**
-         * 將 RGB 值轉換為 HEX 字串
+         * 將數值轉換為 HEX 字串
          */
         function rgbToHex(r, g, b) {
-            // 確保值在 0-255 之間
-            const toHex = (c) => Math.min(255, Math.max(0, c)).toString(16).padStart(2, '0').toUpperCase();
+            const toHex = (c) => Math.min(255, Math.max(0, Math.round(c))).toString(16).padStart(2, '0').toUpperCase();
             return `HEX: #${toHex(r)}${toHex(g)}${toHex(b)}`;
+        }
+        
+        /**
+         * 處理數值輸入與滑桿連動
+         */
+        function handleNumberInput(inputEl, sliderEl) {
+            let val = parseInt(inputEl.value);
+
+            if (isNaN(val) || val < 0) {
+                val = 0;
+            } else if (val > 255) {
+                val = 255;
+            }
+            
+            inputEl.value = val;
+            sliderEl.value = val;
+            updateColors();
         }
 
         /**
-         * 核心邏輯：更新所有顏色顯示
+         * 核心計算：同步三看板的色彩物理反應
          */
         function updateColors() {
             // 1. 取得入射色光強度 (0-255)
-            const lightR = parseInt(lightRInput.value);
-            const lightG = parseInt(lightGInput.value);
-            const lightB = parseInt(lightBInput.value);
+            const lightR = parseInt(lightRInput.value) || 0;
+            const lightG = parseInt(lightGInput.value) || 0;
+            const lightB = parseInt(lightBInput.value) || 0;
+            
+            // 同步輸入框
+            inputR.value = lightR;
+            inputG.value = lightG;
+            inputB.value = lightB;
 
-            // 更新滑桿數值標籤
-            labelR.textContent = lightR;
-            labelG.textContent = lightG;
-            labelB.textContent = lightB;
-
-            // 2. 計算混合色光 (加法混色)
+            // 2. 看板 1 計算：混合色光 (色光加法)
             const mixedLightHex = rgbToHex(lightR, lightG, lightB);
             const mixedLightRgb = `rgb(${lightR}, ${lightG}, ${lightB})`;
 
             mixedLightColorDiv.style.backgroundColor = mixedLightRgb;
             mixedLightHexP.textContent = mixedLightHex;
             
-            // 3. 取得物體的內在反射特性
+            // 3. 取得小汽車物體內在反射特性
             const objectReflection = objectColors[currentObjectKey];
 
-            // 4. 計算物體在混合光下的外觀顏色 (減法混色/反射 - Hadamard product)
-            const apparentR = (objectReflection.r / 255) * lightR;
-            const apparentG = (objectReflection.g / 255) * lightG;
-            const apparentB = (objectReflection.b / 255) * lightB;
+            // 4. 看板 3 計算：小汽車反射出的顯色 (反射率 × 入射光)
+            const apparentR = Math.round((objectReflection.r / 255) * lightR);
+            const apparentG = Math.round((objectReflection.g / 255) * lightG);
+            const apparentB = Math.round((objectReflection.b / 255) * lightB);
 
             const apparentHex = rgbToHex(apparentR, apparentG, apparentB);
             const apparentRgb = `rgb(${apparentR}, ${apparentG}, ${apparentB})`;
             
-            // 5. 更新物體外觀顯示 (更新三角形的 border-bottom-color)
-            apparentObjectColorDiv.style.borderBottomColor = apparentRgb;
+            // 5. 更新暗室中小汽車剪影的填充色：純粹物理反射顏色，徹底杜絕任何光暈與發光濾鏡
+            apparentObjectColorSvg.setAttribute('fill', apparentRgb);
+            apparentObjectColorSvg.style.filter = 'none';
             apparentObjectHexP.textContent = apparentHex;
-
-            // 調整最終顯色結果的文字顏色：如果背景很暗，文字用亮色；反之用深色
-            const apparentBrightness = (apparentR + apparentG + apparentB) / 3;
-            apparentObjectHexP.classList.toggle('text-text-light', apparentBrightness < 128); 
-            apparentObjectHexP.classList.toggle('text-gray-900', apparentBrightness >= 128); 
-            
-            // 調整混合色光結果的文字顏色
-            const mixedBrightness = (lightR + lightG + lightB) / 3;
-            mixedLightHexP.classList.toggle('text-text-light', mixedBrightness < 128);
-            mixedLightHexP.classList.toggle('text-gray-900', mixedBrightness >= 128);
         }
 
         /**
-         * 設置當前物體顏色並更新 UI
+         * 切換小汽車物體材質顏色
          */
         function setObjectColor(key) {
             currentObjectKey = key;
             const object = objectColors[key];
 
-            // *** 這裡更新了內在顏色三角形的顏色，使用 borderBottomColor ***
-            intrinsicObjectColorDiv.style.borderBottomColor = object.hex;
+            // 更新看板 2 的小汽車本體原色
+            intrinsicObjectColorSvg.setAttribute('fill', object.hex);
             intrinsicObjectNameP.textContent = object.name;
 
-            // 移除所有按鈕的選中樣式
+            // 更新按鈕選中樣式
             document.querySelectorAll('#objectColorButtons button').forEach(btn => {
-                btn.classList.remove('ring-4', 'ring-offset-2', 'ring-warning-accent'); // 強調色作為選中標記
-                btn.classList.add('hover:ring-2', 'hover:ring-border-accent');
+                btn.classList.remove('ring-4', 'ring-offset-1', 'ring-warning-accent');
+                btn.classList.add('hover:ring-1', 'hover:ring-gray-400');
             });
 
-            // 為當前選中的按鈕添加選中樣式
-            document.getElementById(`btn-${key}`).classList.add('ring-4', 'ring-offset-2', 'ring-warning-accent');
-            document.getElementById(`btn-${key}`).classList.remove('hover:ring-2', 'hover:ring-border-accent');
+            const activeBtn = document.getElementById(`btn-${key}`);
+            if (activeBtn) {
+                activeBtn.classList.add('ring-4', 'ring-offset-1', 'ring-warning-accent');
+                activeBtn.classList.remove('hover:ring-1', 'hover:ring-gray-400');
+            }
 
+            // 同步計算看板 3 的外觀呈現
             updateColors();
         }
 
         /**
-         * 初始化物體顏色選擇按鈕
+         * 初始化 8 色物體按鈕
          */
         function initializeObjectButtons() {
-            // 定義您指定的顯示順序：
-            // 第一行 (紅、綠、藍、白、黑)，第二行 (黃、洋紅、青)
+            // 排列順序：紅、綠、藍、白、黑、黃、洋紅、青
             const displayOrder = ['red', 'green', 'blue', 'white', 'black', 'yellow', 'magenta', 'cyan'];
-            objectColorButtonsDiv.innerHTML = ''; // 清空現有按鈕
+            objectColorButtonsDiv.innerHTML = '';
 
             displayOrder.forEach((key, index) => {
                 const object = objectColors[key];
                 const button = document.createElement('button');
                 
-                // 根據顏色決定文字顏色以確保可讀性
-                const textColor = (object.r + object.g + object.b) / 3 > 127 ? 'text-gray-900' : 'text-text-light';
+                // 根據背景明暗設定文字顏色
+                const textColor = (object.r + object.g + object.b) / 3 > 127 ? 'text-gray-950 font-bold' : 'text-gray-100 font-bold';
 
                 button.id = `btn-${key}`;
-                button.textContent = object.name.split(' ')[0]; // 只顯示中文名稱
+                button.textContent = object.name.split(' ')[0];
                 button.onclick = () => setObjectColor(key);
-                // flex-grow: 確保按鈕在小螢幕上分佈更均勻
-                button.className = `p-2 rounded-sm font-medium text-sm transition-all duration-150 shadow-sm ${textColor} flex-grow sm:flex-grow-0 border border-border-accent`;
+                button.className = `px-2 py-1 rounded-sm text-xs transition-all duration-150 shadow-sm ${textColor} flex-grow sm:flex-grow-0 border border-border-accent`;
                 button.style.backgroundColor = object.hex;
 
                 objectColorButtonsDiv.appendChild(button);
                 
-                // 在第五個按鈕 (black, index 4) 之後，強制插入一個佔滿寬度的元素來換行
+                // 第 5 個按鈕 (black) 後斷行，維持兩列 4+3/4+4 的整齊排版
                 if (index === 4) { 
                     const spacer = document.createElement('div');
-                    spacer.className = 'w-full h-0'; // 隱形的全寬元素
+                    spacer.className = 'w-full h-0';
                     objectColorButtonsDiv.appendChild(spacer);
                 }
             });
-            // 預設選擇當前的 currentObjectKey (黑色)
+
+            // 預設選中紅色
             setObjectColor(currentObjectKey);
         }
 
-        // 綁定事件監聽器
+        // 綁定輸入監聽
         [lightRInput, lightGInput, lightBInput].forEach(input => {
             input.addEventListener('input', updateColors);
         });
+        
+        inputR.addEventListener('input', () => handleNumberInput(inputR, lightRInput));
+        inputG.addEventListener('input', () => handleNumberInput(inputG, lightGInput));
+        inputB.addEventListener('input', () => handleNumberInput(inputB, lightBInput));
 
-        // 初始化
+        // 啟動初始化
         initializeObjectButtons();
-        updateColors(); // 執行初始計算
+        updateColors();
     </script>
 </body>
 </html>

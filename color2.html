@@ -1,210 +1,275 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>光與顏色模擬實驗(Light and color simulation experiment)</title>
+    <title>光與顏色模擬實驗 (Light and Color Simulation Experiment)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 工業風：深色背景，高對比文字，去除圓角 */
-        body { font-family: 'Inter', sans-serif; min-height: 100vh; background-color: #1a1a1a; }
+        /* 工業風：深色背景、高對比文字、銳利邊緣 */
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            min-height: 100vh; 
+            background-color: #1a1a1a; 
+        }
         
-        /* 自定義滑桿樣式，使其更具機械感 */
+        /* 自定義滑桿樣式，營造方正機械感 */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 18px;
             width: 18px;
-            border-radius: 4px; /* 變為方形 */
-            cursor: pointer;
-            margin-top: -7px;
-            border: 1px solid #EAEAEA;
-            transition: all 0.2s;
-        }
-        /* 針對不同顏色的滑桿設定拇指顏色 */
-        #lightR::-webkit-slider-thumb { background: #FF3333; box-shadow: 0 0 5px rgba(255, 0, 0, 0.7); }
-        #lightG::-webkit-slider-thumb { background: #33CC33; box-shadow: 0 0 5px rgba(0, 255, 0, 0.7); }
-        #lightB::-webkit-slider-thumb { background: #3366FF; box-shadow: 0 0 5px rgba(0, 0, 255, 0.7); }
-        /* 滑軌顏色使用深色背景上的高亮漸變 */
-        .slider-track-red { background: linear-gradient(to right, #444444, #FF3333); height: 5px; border-radius: 0; }
-        .slider-track-green { background: linear-gradient(to right, #444444, #33CC33); height: 5px; border-radius: 0; }
-        .slider-track-blue { background: linear-gradient(to right, #444444, #3366FF); height: 5px; border-radius: 0; }
-        
-        /* 按鈕外框樣式，用於選中國旗 */
-        .flag-container {
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
             border-radius: 2px;
+            cursor: pointer;
+            margin-top: -6.5px;
+            border: 1px solid #EAEAEA;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
         }
-        .flag-container:hover {
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-            border-color: #FFD700;
-        }
-        .flag-selected {
-            border-color: #FFD700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
         }
 
-        /* 關鍵 CSS：用於模擬色光照射效果 */
-        /* mix-blend-mode: multiply (相乘) 模擬了色光和顏料 (反射) 的減法行為 */
+        #lightR::-webkit-slider-thumb { background: #FF3333; box-shadow: 0 0 8px rgba(255, 51, 51, 0.8); }
+        #lightG::-webkit-slider-thumb { background: #33CC33; box-shadow: 0 0 8px rgba(51, 204, 51, 0.8); }
+        #lightB::-webkit-slider-thumb { background: #3366FF; box-shadow: 0 0 8px rgba(51, 102, 255, 0.8); }
+        
+        /* 滑軌顏色漸變 */
+        .slider-track-red { background: linear-gradient(to right, #333333, #FF3333); height: 5px; }
+        .slider-track-green { background: linear-gradient(to right, #333333, #33CC33); height: 5px; }
+        .slider-track-blue { background: linear-gradient(to right, #333333, #3366FF); height: 5px; }
+        
+        /* 國旗選取鈕外框 */
+        .flag-container {
+            border: 2px solid #404040;
+            background-color: #242424;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .flag-container:hover {
+            border-color: #FFD700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
+        .flag-selected {
+            border-color: #FFD700 !important;
+            background-color: #333333;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.7);
+        }
+
+        /* 關鍵物理模擬：色光照射與物體反射的減法行為 (mix-blend-mode: multiply) */
         .light-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* 設置混合模式為相乘 */
             mix-blend-mode: multiply; 
-            transition: background-color 0.3s;
+            transition: background-color 0.15s ease-out;
+            pointer-events: none;
         }
-
     </style>
 </head>
-<body class="p-4 sm:p-8 flex items-start justify-center">
+<body class="p-3 sm:p-6 lg:p-8 flex items-center justify-center">
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        // 工業風格配色
-                        'industrial-bg': '#1a1a1a',      // 深黑色背景
-                        'panel-bg': '#2c2c2c',           // 控制面板深灰色
-                        'text-light': '#EAEAEA',         // 亮白色文字
-                        'border-accent': '#606060',      // 金屬色邊框
-                        'warning-accent': '#FFD700',     // 黃色強調色
+                        'industrial-bg': '#1a1a1a',
+                        'panel-bg': '#2c2c2c',
+                        'text-light': '#EAEAEA',
+                        'border-accent': '#606060',
+                        'warning-accent': '#FFD700',
                     }
                 }
             }
         }
     </script>
 
-    <!-- 主容器：採用深灰背景，邊緣銳利，強烈邊框 (優化手機內邊距 p-4) -->
-    <div class="w-full max-w-5xl bg-gray-800 border-2 border-border-accent shadow-2xl rounded-sm p-4 sm:p-8">
-        <!-- 網頁標題 (優化手機字體大小 text-2xl) -->
-        <h1 class="text-2xl sm:text-3xl font-bold text-text-light mb-2 text-center border-b-2 border-border-accent pb-2">
-            光與顏色模擬實驗(Light and color simulation experiment)
-        </h1>
+    <!-- 主容器：寬度提升至 max-w-[1560px]，完美適配大螢幕、寬螢幕與平板橫放 -->
+    <div class="w-full max-w-[1560px] bg-[#222222] border-2 border-[#606060] shadow-2xl rounded-sm p-4 sm:p-6 lg:p-7 flex flex-col gap-6">
+        
+        <!-- 頂部標題區 -->
+        <header class="border-b-2 border-[#606060] pb-3 text-center">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-wide text-[#EAEAEA]">
+                光與顏色模擬實驗 <span class="text-sm sm:text-base lg:text-lg font-mono text-gray-400 font-normal block sm:inline sm:ml-2">(Light and Color Simulation Experiment)</span>
+            </h1>
+            <p class="text-xs sm:text-sm text-gray-400 mt-1">
+                三段式連動觀察：① 調節光源三原色 → ② 選定白光下受照物體 → ③ 觀察反射呈色結果
+            </p>
+        </header>
 
-        <!-- 結構化網格 (手機堆疊，平板以上兩欄) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <!-- 核心三大區塊：手機堆疊 (grid-cols-1)，平板橫放及寬螢幕以上成一列 (lg:grid-cols-3) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
-            <!-- 左側：輸入控制面板 (色光混合) -->
-            <div class="bg-panel-bg p-6 rounded-sm border border-border-accent">
-                <!-- 實驗 1 標題 -->
-                <h2 class="text-xl font-semibold mb-6 text-warning-accent border-b border-border-accent pb-2">
-                    1. 色光混合模擬 (Color light mixing simulation)
-                </h2>
-                
-                <!-- 紅光控制 -->
-                <div class="mb-4">
-                    <label for="lightR" class="block text-lg font-mono text-text-light flex justify-between">
-                        <span>紅光強度 (Red light intensity)</span>
-                        <span id="labelR" class="font-bold text-red-400">0</span>
-                    </label>
-                    <input type="range" id="lightR" min="0" max="255" value="0"
-                           class="w-full h-3 rounded-lg appearance-none cursor-pointer slider-track-red">
+            <!-- =========================
+                 區塊 1：色光混合模擬
+            ========================== -->
+            <section class="bg-[#2c2c2c] p-5 rounded-sm border border-[#606060] flex flex-col justify-between shadow-lg">
+                <div>
+                    <!-- 標題 -->
+                    <div class="flex items-center space-x-2 border-b border-[#606060] pb-2 mb-4">
+                        <span class="bg-[#FFD700] text-black font-mono font-bold text-sm px-2 py-0.5 rounded-sm">01</span>
+                        <h2 class="text-lg font-bold text-[#FFD700] leading-snug">
+                            色光混合模擬<br>
+                            <span class="text-xs font-mono text-gray-400 font-normal">Color Light Mixing Simulation</span>
+                        </h2>
+                    </div>
+
+                    <!-- 紅光調控 -->
+                    <div class="mb-4 bg-[#242424] p-3 border border-gray-700 rounded-sm">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="lightR" class="text-sm font-mono font-bold text-red-400 flex items-center gap-1.5">
+                                <span class="inline-block w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                                紅光強度 (Red)
+                            </label>
+                            <input type="number" id="inputR" min="0" max="255" value="0" 
+                                   class="w-16 bg-[#1a1a1a] text-red-400 font-mono font-bold text-right border border-[#606060] px-2 py-0.5 text-sm focus:outline-none focus:border-[#FFD700]">
+                        </div>
+                        <input type="range" id="lightR" min="0" max="255" value="0"
+                               class="w-full h-2 rounded-none appearance-none cursor-pointer slider-track-red">
+                    </div>
+
+                    <!-- 綠光調控 -->
+                    <div class="mb-4 bg-[#242424] p-3 border border-gray-700 rounded-sm">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="lightG" class="text-sm font-mono font-bold text-green-400 flex items-center gap-1.5">
+                                <span class="inline-block w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+                                綠光強度 (Green)
+                            </label>
+                            <input type="number" id="inputG" min="0" max="255" value="0" 
+                                   class="w-16 bg-[#1a1a1a] text-green-400 font-mono font-bold text-right border border-[#606060] px-2 py-0.5 text-sm focus:outline-none focus:border-[#FFD700]">
+                        </div>
+                        <input type="range" id="lightG" min="0" max="255" value="0"
+                               class="w-full h-2 rounded-none appearance-none cursor-pointer slider-track-green">
+                    </div>
+
+                    <!-- 藍光調控 -->
+                    <div class="mb-5 bg-[#242424] p-3 border border-gray-700 rounded-sm">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="lightB" class="text-sm font-mono font-bold text-blue-400 flex items-center gap-1.5">
+                                <span class="inline-block w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
+                                藍光強度 (Blue)
+                            </label>
+                            <input type="number" id="inputB" min="0" max="255" value="0" 
+                                   class="w-16 bg-[#1a1a1a] text-blue-400 font-mono font-bold text-right border border-[#606060] px-2 py-0.5 text-sm focus:outline-none focus:border-[#FFD700]">
+                        </div>
+                        <input type="range" id="lightB" min="0" max="255" value="0"
+                               class="w-full h-2 rounded-none appearance-none cursor-pointer slider-track-blue">
+                    </div>
                 </div>
 
-                <!-- 綠光控制 -->
-                <div class="mb-4">
-                    <label for="lightG" class="block text-lg font-mono text-text-light flex justify-between">
-                        <span>綠光強度 (Green light intensity)</span>
-                        <span id="labelG" class="font-bold text-green-400">0</span>
-                    </label>
-                    <input type="range" id="lightG" min="0" max="255" value="0"
-                           class="w-full h-3 rounded-lg appearance-none cursor-pointer slider-track-green">
-                </div>
-
-                <!-- 藍光控制 -->
-                <div class="mb-6">
-                    <label for="lightB" class="block text-lg font-mono text-text-light flex justify-between">
-                        <span>藍光強度 (Blue light intensity)</span>
-                        <span id="labelB" class="font-bold text-blue-400">0</span>
-                    </label>
-                    <input type="range" id="lightB" min="0" max="255" value="0"
-                           class="w-full h-3 rounded-lg appearance-none cursor-pointer slider-track-blue">
-                </div>
-
-                <!-- 混合色光結果 (光照顏色顯示) -->
-                <div class="p-4 bg-gray-700 rounded-sm border border-border-accent">
-                    <p class="text-base font-semibold text-text-light mb-2">色光混合結果 (Color light mixing results):</p>
-                    <div id="mixedLightColor" class="h-20 w-20 mx-auto rounded-full transition-all duration-300 border border-gray-500 shadow-xl"
+                <!-- 混合色光預覽結果 -->
+                <div class="p-4 bg-[#1f1f1f] rounded-sm border border-[#606060] text-center">
+                    <p class="text-xs font-semibold text-gray-300 mb-2 font-mono">
+                        入射合成光 (Mixed Incident Light)
+                    </p>
+                    <div id="mixedLightColor" 
+                         class="h-16 w-16 mx-auto rounded-full border-2 border-gray-500 shadow-xl transition-all duration-150"
                          style="background-color: rgb(0, 0, 0);"></div>
-                    <p id="mixedLightHex" class="text-sm font-mono text-center mt-2 text-gray-700">HEX: #000000</p>
-                </div>
-            </div>
-
-            <!-- 右側：物體與結果輸出面板 (國旗顯色模擬) -->
-            <div class="bg-panel-bg p-6 rounded-sm border border-border-accent flex flex-col">
-                <!-- 實驗 2 標題 (已修改) -->
-                <h2 class="text-xl font-semibold mb-6 text-warning-accent border-b border-border-accent pb-2">
-                    2. 國旗(物體)在不同色光照射下的結果 (The results of the national flag (object) under different colors of light)
-                </h2>
-                
-                <!-- 國旗選擇 -->
-                <p class="text-base font-semibold text-text-light mb-3">選擇國旗 (Select national flag):</p>
-                <!-- 國旗按鈕容器 (2x3 grid) -->
-                <div class="grid grid-cols-3 gap-3 mb-6" id="flagSelectionContainer">
-                    <!-- Flags will be injected here by JS -->
-                </div>
-
-                <!-- 新增上傳圖片功能 -->
-                <!-- 隱藏的檔案輸入框 -->
-                <input type="file" id="imageUploadInput" accept="image/*" class="hidden">
-                <!-- 顯示的按鈕 -->
-                <button id="uploadImageButton" 
-                    class="w-full py-3 mb-6 bg-warning-accent text-gray-900 font-bold text-lg rounded-sm border border-warning-accent hover:bg-yellow-300 transition-colors">
-                    上傳圖片 (Upload Image)
-                </button>
-                
-                <!-- 當前國旗在白光下的顏色顯示 (Intrinsic Color) (已修改) -->
-                <div class="mb-6 p-4 bg-gray-700 rounded-sm border border-border-accent">
-                    <!-- 標題修改 -->
-                    <p class="text-base font-semibold text-text-light mb-2">國旗(物體)在白光照射下的顏色 (The color of the national flag (object) under white light):</p>
-                    <div class="flex items-start space-x-4">
-                        <!-- 國旗圖片顯示區 (已放大，並使用 object-contain) -->
-                        <div id="intrinsicFlagDisplay" class="h-24 w-36 flex-shrink-0 border border-border-accent shadow-md rounded-sm overflow-hidden bg-gray-900">
-                            <img id="intrinsicFlagImage" src="" alt="Selected flag" class="w-full h-full object-contain">
-                        </div>
-                        <!-- 國旗名稱顯示區 -->
-                        <div class="flex flex-col justify-center h-24">
-                            <p id="intrinsicFlagCountry" class="text-lg font-bold text-text-light">國家 (Country)</p>
-                            <p id="intrinsicFlagEnglish" class="text-sm font-mono text-gray-400">(English Name)</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 國旗最終顯色結果 (Apparent Color) -->
-                <div class="p-6 bg-gray-800 rounded-sm border-2 border-warning-accent shadow-inner mt-auto">
-                    <!-- 實驗 3 標題修改 (已修改) -->
-                    <h3 class="text-xl font-bold text-warning-accent mb-3 text-center">
-                        3. 觀察者看到的國旗(物體)顏色 (The color of the national flag (object) as seen by the observer)
-                    </h3>
-                    
-                    <!-- 黑色背景容器 (Apparent Object Display) (已增加高度) -->
-                    <!-- 設置 relative 以便放置 absolute 的 overlay -->
-                    <div id="apparentObjectDisplayArea" 
-                          class="h-48 w-full flex items-center justify-center bg-black rounded-sm border-4 border-gray-600 shadow-inner relative overflow-hidden">
-                        
-                        <!-- 1. 國旗基礎圖片 (作為底色) -->
-                        <img id="apparentFlagImage" src="" alt="Apparent Flag" class="w-full h-full object-contain">
-                        
-                        <!-- 2. 模擬色光圖層 (將會被混合模式作用) -->
-                        <div id="apparentLightOverlay" class="light-overlay" style="background-color: rgb(0, 0, 0);"></div>
-                    </div>
-                    
-                    <p class="text-base font-mono text-center mt-3 text-text-light">
-                        <!-- 提示用戶目前使用的色光 -->
-                        <span class="text-gray-400">當前光色 (Current Light): </span>
-                        <span id="currentLightRgbDisplay" class="font-bold text-warning-accent">RGB(0, 0, 0)</span>
+                    <p id="mixedLightHex" class="text-xs font-mono font-bold text-[#EAEAEA] mt-2 tracking-widest">
+                        HEX: #000000
                     </p>
                 </div>
-            </div>
+            </section>
+
+            <!-- =========================
+                 區塊 2：受光物體在白光下的顏色
+            ========================== -->
+            <section class="bg-[#2c2c2c] p-5 rounded-sm border border-[#606060] flex flex-col justify-between shadow-lg">
+                <div>
+                    <!-- 標題 -->
+                    <div class="flex items-center space-x-2 border-b border-[#606060] pb-2 mb-4">
+                        <span class="bg-[#FFD700] text-black font-mono font-bold text-sm px-2 py-0.5 rounded-sm">02</span>
+                        <h2 class="text-lg font-bold text-[#FFD700] leading-snug">
+                            國旗顏色<br>
+                            <span class="text-xs font-mono text-gray-400 font-normal">Flag Color</span>
+                        </h2>
+                    </div>
+
+                    <!-- 選擇國旗縮圖網格 (3x2) -->
+                    <p class="text-xs font-semibold text-[#EAEAEA] mb-2 font-mono">
+                        選擇照射目標 (Select Flag):
+                    </p>
+                    <div class="grid grid-cols-3 gap-2 mb-3" id="flagSelectionContainer">
+                        <!-- 由 JavaScript 動態注入六國國旗按鈕 -->
+                    </div>
+
+                    <!-- 上傳圖片按鈕 -->
+                    <input type="file" id="imageUploadInput" accept="image/*" class="hidden">
+                    <button id="uploadImageButton" 
+                            class="w-full py-2 mb-4 bg-[#333333] hover:bg-[#FFD700] hover:text-black text-gray-200 font-bold text-xs uppercase tracking-wider rounded-sm border border-gray-600 transition-colors flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        上傳自訂圖片 (Upload Image)
+                    </button>
+                </div>
+
+                <!-- 白光下的物體展示看板（已移除右側文字，國旗圖案置中呈現） -->
+                <div class="p-3 bg-[#1f1f1f] rounded-sm border border-[#606060]">
+                    <p class="text-xs font-semibold text-gray-300 mb-2 font-mono text-center">
+                        白光照射顏色 (Under White Light)
+                    </p>
+                    <div class="flex justify-center items-center">
+                        <div id="intrinsicFlagDisplay" class="h-24 w-40 sm:h-28 sm:w-48 border border-[#606060] bg-black overflow-hidden flex items-center justify-center p-1 rounded-sm shadow-inner">
+                            <img id="intrinsicFlagImage" src="" alt="Selected flag" class="max-w-full max-h-full object-contain">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================
+                 區塊 3：觀察者看到的國旗顏色 (顯色結果)
+            ========================== -->
+            <section class="bg-[#2c2c2c] p-5 rounded-sm border-2 border-[#FFD700] flex flex-col justify-between shadow-2xl">
+                <div>
+                    <!-- 標題 -->
+                    <div class="flex items-center space-x-2 border-b border-[#606060] pb-2 mb-4">
+                        <span class="bg-[#FFD700] text-black font-mono font-bold text-sm px-2 py-0.5 rounded-sm">03</span>
+                        <h2 class="text-lg font-bold text-[#FFD700] leading-snug">
+                            觀察者看到的國旗顏色<br>
+                            <span class="text-xs font-mono text-gray-400 font-normal">Apparent Color Seen by Observer</span>
+                        </h2>
+                    </div>
+
+                    <!-- 提示文字 -->
+                    <p class="text-xs text-gray-300 mb-2 font-mono">
+                        受「入射色光」照射後的實際感知成像：
+                    </p>
+
+                    <!-- 核心觀察暗室視窗 (Apparent Display Window) -->
+                    <div id="apparentObjectDisplayArea" 
+                         class="h-56 sm:h-64 lg:h-56 xl:h-64 w-full flex items-center justify-center bg-black rounded-sm border-2 border-gray-600 relative overflow-hidden shadow-inner">
+                        
+                        <!-- 國旗底層圖案 (物體顏料反射譜) -->
+                        <img id="apparentFlagImage" src="" alt="Apparent Flag" class="w-full h-full object-contain p-2">
+                        
+                        <!-- 疊加色光圖層 (mix-blend-mode: multiply) -->
+                        <div id="apparentLightOverlay" class="light-overlay" style="background-color: rgb(0, 0, 0);"></div>
+                    </div>
+                </div>
+
+                <!-- 當前環境光源參數顯示區 -->
+                <div class="mt-4 p-3 bg-[#1a1a1a] border border-[#606060] text-center">
+                    <span class="text-xs font-mono text-gray-400 block mb-1">當前照射光光譜 (Incident Light):</span>
+                    <span id="currentLightRgbDisplay" class="font-mono font-extrabold text-base text-[#FFD700] tracking-wider">
+                        RGB(0, 0, 0)
+                    </span>
+                    <p class="text-[11px] text-gray-500 font-mono mt-1">
+                        ※ 依物理減法混色機制模擬 (Multiply Filter)
+                    </p>
+                </div>
+            </section>
+
         </div>
+
+        <!-- 頁尾署名 -->
+        <footer style="text-align: right; margin-top: 48px; padding: 20px 0; font-size: 0.85em; color: #777; border-top: 1px solid #333;">
+            by Jay's Lab 紅樓老頭子 系統版本：v1.2
+        </footer>
     </div>
 
+    <!-- 邏輯腳本 -->
     <script>
-        // 國旗數據：包含名稱、英文和圖片 URL
+        // 國旗資料庫
         const flagData = {
             'taiwan': { id: 'taiwan', country: '中華民國', english: 'Republic of China', url: 'https://bluecyj.github.io/light/taiwan.png' },
             'japan': { id: 'japan', country: '日本', english: 'Japan', url: 'https://bluecyj.github.io/light/japan.png' },
@@ -214,37 +279,34 @@
             'romania': { id: 'romania', country: '羅馬尼亞', english: 'Romania', url: 'https://bluecyj.github.io/light/romania.png' }
         };
 
-        // 預設選擇的國旗
+        // 狀態變數
         let currentFlagKey = 'taiwan'; 
-        // 儲存用戶上傳圖片的 Base64 URL
         let customImageUrl = ''; 
 
-        // 取得 UI 元素 (簡化部分重複元素名稱)
+        // DOM 元素選取
         const lightRInput = document.getElementById('lightR');
         const lightGInput = document.getElementById('lightG');
         const lightBInput = document.getElementById('lightB');
-        const labelR = document.getElementById('labelR');
-        const labelG = document.getElementById('labelG');
-        const labelB = document.getElementById('labelB');
+        
+        const inputR = document.getElementById('inputR');
+        const inputG = document.getElementById('inputG');
+        const inputB = document.getElementById('inputB');
+        
         const mixedLightColorDiv = document.getElementById('mixedLightColor');
         const mixedLightHexP = document.getElementById('mixedLightHex');
         
-        // 國旗相關顯示元素
-        const intrinsicFlagDisplay = document.getElementById('intrinsicFlagDisplay');
         const intrinsicFlagImage = document.getElementById('intrinsicFlagImage');
-        const intrinsicFlagCountry = document.getElementById('intrinsicFlagCountry');
-        const intrinsicFlagEnglish = document.getElementById('intrinsicFlagEnglish');
+        
         const apparentFlagImage = document.getElementById('apparentFlagImage');
         const apparentLightOverlay = document.getElementById('apparentLightOverlay');
         const currentLightRgbDisplay = document.getElementById('currentLightRgbDisplay');
         const flagSelectionContainer = document.getElementById('flagSelectionContainer');
 
-        // 新增的圖片上傳元素
         const imageUploadInput = document.getElementById('imageUploadInput');
         const uploadImageButton = document.getElementById('uploadImageButton');
 
         /**
-         * 將 RGB 值轉換為 HEX 字串
+         * 將 RGB 數值轉換為 HEX 色碼
          */
         function rgbToHex(r, g, b) {
             const toHex = (c) => Math.min(255, Math.max(0, Math.round(c))).toString(16).padStart(2, '0').toUpperCase();
@@ -252,20 +314,19 @@
         }
 
         /**
-         * 核心邏輯：更新所有顏色顯示和國旗顯色效果
+         * 核心計算：同步數值並更新混色及成像圖層
          */
         function updateColors() {
-            // 1. 取得入射色光強度 (0-255)
-            const lightR = parseInt(lightRInput.value);
-            const lightG = parseInt(lightGInput.value);
-            const lightB = parseInt(lightBInput.value);
+            const lightR = parseInt(lightRInput.value) || 0;
+            const lightG = parseInt(lightGInput.value) || 0;
+            const lightB = parseInt(lightBInput.value) || 0;
 
-            // 更新滑桿數值標籤
-            labelR.textContent = lightR;
-            labelG.textContent = lightG;
-            labelB.textContent = lightB;
+            // 雙向同步至數字框
+            inputR.value = lightR;
+            inputG.value = lightG;
+            inputB.value = lightB;
 
-            // 2. 計算混合色光 (加法混色)
+            // 光源加法混色
             const mixedLightRgb = `rgb(${lightR}, ${lightG}, ${lightB})`;
             const mixedLightHex = rgbToHex(lightR, lightG, lightB);
 
@@ -273,23 +334,27 @@
             mixedLightHexP.textContent = mixedLightHex;
             currentLightRgbDisplay.textContent = `RGB(${lightR}, ${lightG}, ${lightB})`;
             
-            // 3. 更新混合色光結果的文字顏色
-            const mixedBrightness = (lightR + lightG + lightB) / 3;
-            if (mixedBrightness < 128) {
-                mixedLightHexP.classList.add('text-text-light');
-                mixedLightHexP.classList.remove('text-gray-900');
-            } else {
-                mixedLightHexP.classList.remove('text-text-light');
-                mixedLightHexP.classList.add('text-gray-900');
-            }
-
-            // 4. 模擬國旗在色光下的外觀顏色 (使用 CSS mix-blend-mode)
-            // 將混合光色作為一個 overlay 圖層的背景色
+            // 透過相乘模式 (multiply) 模擬物體減法反射
             apparentLightOverlay.style.backgroundColor = mixedLightRgb;
         }
 
         /**
-         * 處理圖片上傳事件
+         * 數字輸入框即時驗證與數值邊界防護 (0~255)
+         */
+        function handleNumberInput(inputElement, sliderElement) {
+            let val = parseInt(inputElement.value);
+            if (isNaN(val) || val < 0) {
+                val = 0;
+            } else if (val > 255) {
+                val = 255;
+            }
+            sliderElement.value = val;
+            inputElement.value = val;
+            updateColors();
+        }
+
+        /**
+         * 本機自訂圖片讀取與轉換
          */
         function handleImageUpload(event) {
             const file = event.target.files[0];
@@ -297,10 +362,7 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     customImageUrl = e.target.result;
-                    // 將當前選中的物體設為 'custom'，觸發 selectFlag 更新 UI
-                    selectFlag('custom'); 
-                    
-                    // 清空 input 值，以便使用者再次選擇同一張圖片時仍能觸發 change 事件
+                    selectFlag('custom');
                     imageUploadInput.value = ''; 
                 };
                 reader.readAsDataURL(file);
@@ -308,97 +370,93 @@
         }
 
         /**
-         * 設置當前國旗/圖片並更新 UI
-         * @param {string} key - 國旗的鍵 (e.g., 'taiwan') 或 'custom'
+         * 切換當前國旗或自訂圖片
          */
         function selectFlag(key) {
             currentFlagKey = key;
-            let url, country, english;
+            let url, country;
 
             if (key === 'custom') {
                 url = customImageUrl;
-                country = '自定義圖片';
-                english = 'Custom Image';
-                if (!url) return; // 如果還沒有上傳圖片，則不執行任何操作
+                country = '自訂圖片';
+                if (!url) return;
             } else {
                 const flag = flagData[key];
                 url = flag.url;
                 country = flag.country;
-                english = flag.english;
-                // 如果選擇了預設國旗，清除自定義圖片狀態
                 customImageUrl = ''; 
             }
 
-            // 1. 更新國旗在白光下的顯示區
+            // 更新白光基準展示區 (區塊 2)
             intrinsicFlagImage.src = url;
             intrinsicFlagImage.alt = country;
-            intrinsicFlagCountry.textContent = country;
-            intrinsicFlagEnglish.textContent = `(${english})`;
 
-            // 2. 更新觀察者看到的國旗顯示區
+            // 更新觀察者看到的展示區 (區塊 3)
             apparentFlagImage.src = url;
             apparentFlagImage.alt = `Apparent ${country}`;
 
-            // 3. 更新按鈕選中樣式
-            document.querySelectorAll('.flag-container').forEach(div => {
-                div.classList.remove('flag-selected');
+            // 更新選取高亮狀態
+            document.querySelectorAll('.flag-container').forEach(el => {
+                el.classList.remove('flag-selected');
             });
 
-            // 只有選擇預設國旗時，才添加選中樣式
             if (key !== 'custom') {
-                document.getElementById(`flag-container-${key}`).classList.add('flag-selected');
+                const activeBtn = document.getElementById(`flag-container-${key}`);
+                if (activeBtn) activeBtn.classList.add('flag-selected');
             }
 
-            updateColors(); // 重新計算顯色效果
+            updateColors();
         }
 
         /**
          * 初始化國旗選擇按鈕
          */
         function initializeFlagButtons() {
-            flagSelectionContainer.innerHTML = ''; // 清空現有內容
+            flagSelectionContainer.innerHTML = '';
 
             Object.values(flagData).forEach((flag) => {
                 const container = document.createElement('div');
                 container.id = `flag-container-${flag.id}`;
-                container.className = 'flex flex-col items-center flag-container p-1';
+                container.className = 'flex flex-col items-center flag-container p-1 rounded-sm';
                 container.onclick = () => selectFlag(flag.id);
 
-                // 國旗縮小圖
                 const img = document.createElement('img');
                 img.src = flag.url;
                 img.alt = flag.country;
-                img.className = 'w-full h-auto object-cover border border-gray-600 mb-1 aspect-[3/2]'; 
+                img.className = 'w-full h-auto object-cover border border-gray-700 aspect-[3/2]'; 
 
-                // 國旗名稱
                 const nameDiv = document.createElement('div');
-                nameDiv.className = 'text-center text-xs text-text-light font-medium leading-tight';
-                nameDiv.innerHTML = `${flag.country}<br><span class="text-gray-400 font-mono text-[10px]">(${flag.english})</span>`;
+                nameDiv.className = 'text-center text-[11px] text-[#EAEAEA] font-medium leading-tight mt-1';
+                nameDiv.innerHTML = `${flag.country}<br><span class="text-gray-400 font-mono text-[9px]">(${flag.english})</span>`;
 
                 container.appendChild(img);
                 container.appendChild(nameDiv);
                 flagSelectionContainer.appendChild(container);
             });
             
-            // 預設選擇第一面國旗 (中華民國)
+            // 預設選取台灣
             selectFlag(currentFlagKey);
         }
 
         // 綁定事件監聽器
-        [lightRInput, lightGInput, lightBInput].forEach(input => {
-            input.addEventListener('input', updateColors);
+        [lightRInput, lightGInput, lightBInput].forEach(slider => {
+            slider.addEventListener('input', updateColors);
         });
 
-        // 綁定圖片上傳按鈕事件
+        inputR.addEventListener('input', () => handleNumberInput(inputR, lightRInput));
+        inputG.addEventListener('input', () => handleNumberInput(inputG, lightGInput));
+        inputB.addEventListener('input', () => handleNumberInput(inputB, lightBInput));
+
         uploadImageButton.addEventListener('click', () => {
-            imageUploadInput.click(); // 點擊按鈕時觸發隱藏的檔案輸入框
+            imageUploadInput.click();
         });
-
-        // 綁定圖片選擇事件
         imageUploadInput.addEventListener('change', handleImageUpload);
 
-        // 初始化
-        initializeFlagButtons();
+        // 頁面載入後啟動初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeFlagButtons();
+            updateColors();
+        });
     </script>
 </body>
 </html>
